@@ -1,0 +1,104 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import "tailwindcss";
+
+/* ------------------------------
+   Design tokens (premium base)
+--------------------------------*/
+
+:root {
+  color-scheme: light dark;
+
+  /* radius scale */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+
+  /* shadow tokens */
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+/* ------------------------------
+   Base reset improvements
+--------------------------------*/
+
+html,
+body {
+  height: 100%;
+  background-color: white ;
+  /* text-neutral-900 antialiased; */
+  color:black;
+
+}
+
+.card-stat {
+  @apply rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm;
+}
+
+.stat-label {
+  @apply text-sm text-neutral-500;
+}
+
+.stat-value {
+  @apply mt-1 text-2xl font-semibold;
+}
+
+.quick-action {
+  @apply rounded-xl border border-neutral-200 px-4 py-3 text-sm font-medium hover:bg-neutral-50 transition;
+}
+
+.input {
+  @apply w-full rounded-xl border border-neutral-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-neutral-900;
+}
+
+
+/* Dark mode base */
+
+.dark body {
+  @apply bg-neutral-950 text-gray-900;
+}
+
+/* Smooth theme transition */
+
+* {
+  @apply transition-colors duration-300;
+}
+
+.brutal-success-toast {
+  background: #bbf7d0 !important;
+  color: #111 !important;
+  border: 4px solid black !important;
+  border-radius: 18px !important;
+  box-shadow: 6px 6px 0px #000 !important;
+  font-weight: 700 !important;
+}
+
+.brutal-error-toast {
+  background: #fecaca !important;
+  color: #111 !important;
+  border: 4px solid black !important;
+  border-radius: 18px !important;
+  box-shadow: 6px 6px 0px #000 !important;
+  font-weight: 700 !important;
+}
+
+
+.mat-datepicker-content .mat-calendar {
+    background-color: #bbf7d0 !important;
+}
+
+.mat-timepicker-panel{
+  background-color: #bbf7d0 !important;
+}
+
+.mat-mdc-select-panel{
+    background-color: #bbf7d0 !important;
+
+}
+
+.active-link {
+  background-color: #fde68a;
+  transform: translateX(4px);
+}

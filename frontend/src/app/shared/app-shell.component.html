@@ -1,0 +1,155 @@
+<div class="min-h-screen bg-[#f4f4f5] text-neutral-900 relative overflow-hidden">
+
+  <!-- Background texture -->
+  <div class="absolute inset-0 pointer-events-none opacity-[0.07]"
+    style="background-image: repeating-linear-gradient(45deg, #000 0px, #000 6px, transparent 6px, transparent 22px);">
+  </div>
+
+  <!-- ===================== -->
+  <!-- DESKTOP SIDEBAR -->
+  <!-- ===================== -->
+  <aside
+    class="fixed inset-y-0 left-0 z-40 hidden lg:flex flex-col
+    border-r-4 border-black
+    bg-gradient-to-br from-[#f3f1ec] via-[#e9e4f0] to-[#dfeaf5]
+    shadow-[10px_0px_0px_#000]
+    transition-all duration-300 ease-in-out"
+    [class.w-72]="!isCollapsed()"
+    [class.w-20]="isCollapsed()"
+  >
+
+    <!-- HEADER -->
+    <div class="flex items-center justify-between h-20 px-4 border-b-4 border-black">
+
+      <div class="flex items-center gap-3 overflow-hidden">
+        @if (!isCollapsed()) {
+
+          <span class="text-xl font-black tracking-tight whitespace-nowrap">
+            CampusHub
+          </span>
+        }
+      </div>
+
+      <!-- Toggle -->
+      <button
+        (click)="toggleSidebar()"
+        class="border-2 border-black bg-yellow-300 px-2 py-1 text-xs font-black
+        shadow-[2px_2px_0px_#000]
+        hover:bg-black hover:text-white
+        hover:shadow-none
+        transition-all duration-200 flex items-center justify-center"
+      >
+        {{ isCollapsed() ? '»' : '«' }}
+      </button>
+    </div>
+
+    <!-- NAVIGATION -->
+    <nav class="flex-1 px-3 py-6 space-y-3">
+
+      <a
+        *ngFor="let item of filteredMenu"
+        [routerLink]="item.path"
+        routerLinkActive="active-link"
+        class="group relative flex items-center gap-3
+        rounded-xl border-2 border-black
+        bg-white px-4 py-3 text-sm font-bold
+        shadow-[4px_4px_0px_#000]
+        transition-all duration-200 ease-out
+        hover:bg-amber-600 hover:text-white hover:shadow-none hover:translate-x-1 hover:translate-y-1"
+      >
+
+        <!-- Active side bar -->
+
+        <!-- Icon -->
+        <span
+          class="text-lg transition-all"
+          [class.mx-auto]="isCollapsed()"
+        >
+          {{ item.icon }}
+        </span>
+
+        <!-- Label -->
+        @if (!isCollapsed()) {
+          <span class="whitespace-nowrap">
+            {{ item.label }}
+          </span>
+        }
+
+      </a>
+
+    </nav>
+
+    <!-- FOOTER -->
+    @if (!isCollapsed()) {
+      <div class="p-4 border-t-4 border-black">
+        <div
+          class="rounded-2xl bg-yellow-300 border-2 border-black
+          shadow-[4px_4px_0px_#000]
+          p-3 text-xs font-black text-center
+          transition-all duration-200
+          hover:shadow-none hover:translate-x-1 hover:translate-y-1"
+        >
+          BUILT FOR CAMPUSES 🚀
+        </div>
+      </div>
+    }
+
+  </aside>
+
+  <!-- ===================== -->
+  <!-- MAIN AREA -->
+  <!-- ===================== -->
+  <div
+    class="flex flex-col min-h-screen transition-all duration-300 ease-in-out"
+    [class.lg:pl-72]="!isCollapsed()"
+    [class.lg:pl-20]="isCollapsed()"
+  >
+
+    <!-- NAVBAR -->
+    <div class="sticky top-0 z-30 border-b-4 border-black bg-white shadow-[0px_6px_0px_#000]">
+      <app-navbar></app-navbar>
+    </div>
+
+    <!-- PAGE CONTENT -->
+    <main class="flex-1 px-6 py-10 sm:px-10 lg:px-14">
+
+      <div
+        class="rounded-3xl border-4 border-black bg-white
+        shadow-[12px_12px_0px_#000]
+        p-8
+        transition-all duration-200
+        hover:shadow-[8px_8px_0px_#000]
+        hover:translate-x-1 hover:translate-y-1"
+      >
+        <router-outlet></router-outlet>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ===================== -->
+  <!-- MOBILE NAV -->
+  <!-- ===================== -->
+  <div
+    class="fixed bottom-6 left-1/2 -translate-x-1/2
+    w-[94%] z-40 lg:hidden
+    rounded-3xl border-4 border-black
+    bg-white shadow-[8px_8px_0px_#000]"
+  >
+    <div class="grid grid-cols-3 text-center font-black">
+
+      <a
+        *ngFor="let item of filteredMenu"
+        [routerLink]="item.path"
+        routerLinkActive="bg-amber-500 text-white rounded-xl"
+        class="py-4 border-r-4 border-black last:border-r-0
+        transition-all duration-200 hover:bg-yellow-300"
+      >
+        {{ item.label }}
+      </a>
+
+    </div>
+  </div>
+
+</div>

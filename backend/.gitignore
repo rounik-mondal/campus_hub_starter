@@ -1,0 +1,22 @@
+node_modules/
+
+# env
+
+# services
+# src/services/college.service.js
+# src/services/event.service.js
+
+# routes
+# src/routes/college.routes.js
+# src/routes/event.routes.js
+
+# controllers
+# src/controllers/college.controller.js
+# src/controllers/event.controller.js
+
+# macOS
+.DS_Store
+
+task.js
+hello.js
+superadmin.js
