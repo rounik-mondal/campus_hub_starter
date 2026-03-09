@@ -9,9 +9,23 @@ export interface College {
   name: string;
 }
 
+/**  Types (exported for components) */
+export interface Admin {
+  id: string,
+  name: string,
+  email: string,
+  role: string,
+  collegeId: string,
+}
+
 export interface GetCollegesResponse {
   colleges: College[];
 }
+
+export interface GetAdminResponse {
+  admins: Admin[];
+}
+
 
 @Injectable({ providedIn: 'root' })
 export class CollegeService {
@@ -22,6 +36,11 @@ export class CollegeService {
   /** typed */
   getColleges(): Observable<GetCollegesResponse> {
     return this.http.get<GetCollegesResponse>(this.baseUrl);
+  }
+
+  /** typed */
+  getAdmins(): Observable<GetAdminResponse> {
+    return this.http.get<GetAdminResponse>(`${this.baseUrl}/get-admin`);
   }
 
   createCollege(data: any) {

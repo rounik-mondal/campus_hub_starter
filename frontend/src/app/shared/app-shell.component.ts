@@ -27,14 +27,12 @@ export class AppShellComponent {
 
   private tokenService = inject(TokenService);
 
-  // ✅ Collapsible state (Angular 21 signal)
   isCollapsed = signal(false);
 
   toggleSidebar() {
     this.isCollapsed.update(v => !v);
   }
 
-  // ✅ MENU CONFIG
   private menuItems: MenuItem[] = [
     {
       label: 'EVENTS',
@@ -55,7 +53,6 @@ export class AppShellComponent {
     }
   ];
 
-  // ✅ Filter menu based on role
   get filteredMenu(): MenuItem[] {
     const role = this.tokenService.getUser()?.role;
 

@@ -187,8 +187,8 @@ export class SuperAdminDashboardComponent implements OnInit {
     });
 
     // Load total admins (example: using same endpoint, adjust as needed)
-    this.collegeService.getColleges().subscribe({
-      next: (res) => this.totalAdmins.set(res.colleges.length), // placeholder – replace with actual admin count
+    this.collegeService.getAdmins().subscribe({
+      next: (res) => this.totalAdmins.set(res.admins.length), // placeholder – replace with actual admin count
     });
   }
 }
