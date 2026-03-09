@@ -4,6 +4,7 @@ import {
   createCollegeService,
   listCollegesService,
   createCollegeAdminService,
+  listCollegeAdminService,
 } from "../services/college.service.js";
 
 export const createCollege = async (req, res) => {
@@ -28,6 +29,21 @@ export const listColleges = async (req, res) => {
     res.json({
       count: colleges.length,
       colleges,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+export const listCollegeAdmins = async(req, res)=>{
+  try{
+    const admins = await listCollegeAdminService();
+
+    res.json({
+      count: admins.length,
+      admins
     });
   } catch (err) {
     res.status(500).json({

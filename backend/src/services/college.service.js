@@ -58,7 +58,17 @@ export const listCollegesService = async () => {
 };
 
 // List college_admin (for dropdown): TASK
-
+export const listCollegeAdminService = async()=>{
+  const admins = await prisma.user.findMany({
+    where:{
+      role:{
+        in: ["college_admin"]
+      },
+    },
+    orderBy: {createdAt: "asc"},
+  });
+  return admins;
+}
 
 // Create college admin (super_admin only)
 export const createCollegeAdminService = async (data, user) => {
@@ -113,3 +123,4 @@ export const createCollegeAdminService = async (data, user) => {
 
   return admin;
 };
+

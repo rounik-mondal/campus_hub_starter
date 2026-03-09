@@ -5,6 +5,7 @@ import {
   createCollege,
   listColleges,
   createCollegeAdmin,
+  listCollegeAdmins,
 } from "../controllers/college.controller.js";
 
 import { protect, authorize } from "../middlewares/auth.middleware.js";
@@ -21,6 +22,13 @@ router.post(
   protect,
   authorize("super_admin"),
   createCollege
+);
+
+router.get(
+  "/get-admin",
+  protect,
+  authorize("super_admin"),
+  listCollegeAdmins
 );
 
 router.post(
