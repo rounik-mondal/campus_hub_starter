@@ -44,7 +44,7 @@ export const listCollegesService = async () => {
   const colleges = await prisma.college.findMany({
     where: {
       id: {
-        not: "d3f75cb5-4bed-4f50-9872-a1065abc4c33",
+        not: "ae117d86-66d0-464c-86b3-c76e53f67fcc",
       },
     },
     orderBy: { name: "asc" },

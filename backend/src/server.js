@@ -9,7 +9,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import eventRoutes from "./routes/event.routes.js"
 import collegeRoutes from "./routes/college.routes.js";
-
+import registrationRoutes from "./routes/registration.routes.js"
 
 const app = express();
 
@@ -26,6 +26,7 @@ app.get("/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/colleges", collegeRoutes);
+app.use("/api/registrations", registrationRoutes);
 
 const PORT = process.env.PORT || 5001;
 

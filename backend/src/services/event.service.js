@@ -29,6 +29,7 @@ export const createEventService = async (data, user) => {
 
       // CRITICAL: always from token, never from body
       collegeId: user.collegeId,
+      createdBy: user.id,
     },
   });
 
