@@ -48,6 +48,21 @@ export const registerForEventService = async (eventId, user) => {
   });
 };
 
+export const cancelRegistrationService = async (registrationId, user) => {
+
+  /* Only students cancel their own registrations */
+  if (user.role !== "student") {
+    throw new Error("Only students can cancel registrations");
+  }
+
+  return prisma.registration.deleteMany({
+    where: {
+      id: registrationId,
+      userId: user.id,
+    },
+  });
+};
+
 export const getMyRegistrationsService = async (user) => {
 
   return prisma.registration.findMany({
@@ -199,3 +214,4 @@ export const updateEventService = async (eventId, data, user) => {
   });
 
 };
+
