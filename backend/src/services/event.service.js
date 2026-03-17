@@ -14,8 +14,10 @@ export const createEventService = async (data, user) => {
     throw new Error("Admin is not mapped to any college");
   }
 
-  const { title, description, category, location, startDate, endDate, scope } =
-    data;
+  const { 
+    title, description, category, location, startDate, endDate, scope,
+    maxSeats, isPaid, ticketPrice, isTeamEvent, maxTeamSize
+  } = data;
 
   const event = await prisma.event.create({
     data: {
@@ -26,6 +28,12 @@ export const createEventService = async (data, user) => {
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       scope: scope ?? "COLLEGE",
+      
+      maxSeats: maxSeats !== undefined ? parseInt(maxSeats) : 100,
+      isPaid: isPaid ?? false,
+      ticketPrice: ticketPrice !== undefined ? parseFloat(ticketPrice) : 0,
+      isTeamEvent: isTeamEvent ?? false,
+      maxTeamSize: maxTeamSize !== undefined ? parseInt(maxTeamSize) : 1,
 
       // CRITICAL: always from token, never from body
       collegeId: user.collegeId,
@@ -86,6 +94,19 @@ export const getAllEventsService = async (filters, user) => {
           name: true,
         },
       },
+      _count: {
+        select: { 
+          registrations: {
+            where: { status: "approved" }
+          }
+        }
+      },
+      ...(user?.id ? {
+        registrations: {
+          where: { userId: user.id },
+          select: { id: true, status: true }
+        }
+      } : {})
     },
   });
 

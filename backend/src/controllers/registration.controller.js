@@ -35,10 +35,10 @@ export const registerForEvent = async (req, res) => {
 //logic can be, adding one more enum to registration status, and on cancellation the status of the registration should turn to cancelled hence not allowing the student to abuse.
 export const cancelRegistration = async (req, res) => {
   try {
-    const { registrationId } = req.params;
+    const { eventId } = req.params;
 
     const registration = await cancelRegistrationService(
-      registrationId,
+      eventId,
       req.user
     );
 
@@ -129,34 +129,30 @@ export const getPlatformEvents = async (req, res) => {
 };
 
 export const deleteEvent = async (req, res) => {
-    try {
-        const { eventId } = req.params;
-        const event = await deleteEventService(eventId, req.user);
+  try {
+    const { eventId } = req.params;
+    const event = await deleteEventService(eventId, req.user);
 
-        res.status(201).json({
-            message: "Event deleted successfully",
-            event,
-        });
-    } catch (err) {
-        res.status(400).json({
-            message: err.message,
-        });
-    }
+    res.status(201).json({
+      message: "Event deleted successfully",
+      event,
+    });
+  } catch (err) {
+    res.status(400).json({
+      message: err.message,
+    });
+  }
 };
 
-// TODO:  TOTALLY OPTIONAL
-// introduce seats while admins are creating event and implement a automated algorithm that will suspend the booking if the seats are full. (Optional + Good to have feature)
+// TODO: 
+// introduce seats while admins are creating event and implement a automated algorithm that will suspend the booking if the seats are full. 
 
-// introduce if payment is required or not to register for the event + simulate the payment flow (Optional Feature)
+// introduce if payment is required or not to register for the event + simulate the payment flow 
 
 // introduce adding teamates, if it is allowed by the admins while creating the events (admins will decide maximum number of participant in each team) + adding teamate will be on the basis of email id. checks can be implemented that is if the email id exists, the respecive student name will be shown and can be added to the team and a request will go to their account and if they accept they will be joining for the event with the person who invited. (Optional Feature)
 
-// introduce qr + add to calender or .ics on successfull registration for events. (Optional Feature)
+// introduce qr + add to calender or .ics on successfull registration for events. 
 
-// Race-Condition Protection: so that last seat is not registered by two student at same time (Optimisation) --> Deadlock --> mutual exclusivtity
+//Invitation Schema: To track invite status of Teammates 
 
-//Invitation Schema: To track invite status of Teammates (Efficiency)
-
-
-//--- CORE AND REQUIRED
 //super admin should have proper data for how many colleges are there and how many admins are there and how many students are there with proper visualisation that is who belongs where --> will reduce data redundancy. (Core feature)

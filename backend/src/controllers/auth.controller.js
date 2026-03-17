@@ -10,6 +10,7 @@ export const register = async (req, res) => {
     // include collegeId for RBAC + visibility of events
     const token = signToken({
       id: user.id,
+      email: user.email,
       role: user.role,
       collegeId: user.collegeId ?? null,
     });
@@ -40,6 +41,7 @@ export const login = async (req, res) => {
     // include collegeId here as well
     const token = signToken({
       id: user.id,
+      email: user.email,
       role: user.role,
       collegeId: user.collegeId ?? null,
     });

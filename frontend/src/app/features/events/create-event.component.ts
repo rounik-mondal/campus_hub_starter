@@ -178,6 +178,41 @@ import { TokenService } from '../../core/services/token.service';
             </div>
           </div>
 
+          <!-- Extra Configuration -->
+          <div class="grid md:grid-cols-2 gap-6">
+            <mat-form-field appearance="outline" class="brutal-input">
+              <mat-label>Max Seats</mat-label>
+              <input matInput type="number" formControlName="maxSeats" />
+              <mat-icon matPrefix>event_seat</mat-icon>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline" class="brutal-input">
+             <mat-label>Ticket Price ($)</mat-label>
+             <input matInput type="number" formControlName="ticketPrice" />
+             <mat-icon matPrefix>attach_money</mat-icon>
+            </mat-form-field>
+          </div>
+          
+          <div class="grid md:grid-cols-2 gap-6 p-4 border-4 border-black bg-[#e0f2fe] shadow-[6px_6px_0px_#000] rounded-2xl mb-6">
+            <label class="flex items-center gap-3 font-black cursor-pointer text-lg">
+              <input type="checkbox" formControlName="isPaid" class="w-6 h-6 border-4 border-black accent-[#f472b6]">
+              💸 Paid Event?
+            </label>
+
+            <label class="flex items-center gap-3 font-black cursor-pointer text-lg">
+              <input type="checkbox" formControlName="isTeamEvent" class="w-6 h-6 border-4 border-black accent-[#4ade80]">
+              🤝 Team Event?
+            </label>
+            
+            @if(form.get('isTeamEvent')?.value) {
+              <mat-form-field appearance="outline" class="brutal-input md:col-span-2 mt-4">
+                <mat-label>Max Team Size</mat-label>
+                <input matInput type="number" formControlName="maxTeamSize" />
+                <mat-icon matPrefix>group</mat-icon>
+              </mat-form-field>
+            }
+          </div>
+
           <!-- Submit -->
           <button
             mat-raised-button
@@ -269,6 +304,11 @@ export class CreateEventComponent {
     startTime: [null as Date | null, Validators.required],
     endDate: [null as Date | null, Validators.required],
     endTime: [null as Date | null, Validators.required],
+    maxSeats: [100, [Validators.required, Validators.min(1)]],
+    isPaid: [false],
+    ticketPrice: [0, Validators.min(0)],
+    isTeamEvent: [false],
+    maxTeamSize: [1, Validators.min(1)]
   });
 
   constructor() {
@@ -362,6 +402,11 @@ export class CreateEventComponent {
       collegeId: raw.collegeId || undefined,
       startDate: start.toISOString(),
       endDate: end.toISOString(),
+      maxSeats: raw.maxSeats,
+      isPaid: raw.isPaid,
+      ticketPrice: raw.ticketPrice,
+      isTeamEvent: raw.isTeamEvent,
+      maxTeamSize: raw.maxTeamSize
     };
 
     this.eventService.createEvent(payload).subscribe({

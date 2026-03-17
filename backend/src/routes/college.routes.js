@@ -8,7 +8,7 @@ import {
   listCollegeAdmins,
 } from "../controllers/college.controller.js";
 
-import { protect, authorize } from "../middlewares/auth.middleware.js";
+import { verifyAuth, authorize } from "../middlewares/auth.middleware.js";
 import { optionalProtect } from "../middlewares/optionalAuth.middleware.js";
 
 const router = express.Router();
@@ -19,21 +19,21 @@ router.get("/", optionalProtect, listColleges);
 // super admin only
 router.post(
   "/",
-  protect,
+  verifyAuth,
   authorize("super_admin"),
   createCollege
 );
 
 router.get(
   "/get-admin",
-  protect,
+  verifyAuth,
   authorize("super_admin"),
   listCollegeAdmins
 );
 
 router.post(
   "/create-admin",
-  protect,
+  verifyAuth,
   authorize("super_admin"),
   createCollegeAdmin
 );

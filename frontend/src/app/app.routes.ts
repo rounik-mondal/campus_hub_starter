@@ -11,6 +11,17 @@ export const routes: Routes = [
         (m) => m.EventListComponent
       ),
   },
+  
+  // Student Registrations
+  {
+    path: 'my-registrations',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['student'] },
+    loadComponent: () =>
+      import('./features/events/my-registrations.component').then(
+        (m) => m.MyRegistrationsComponent
+      ),
+  },
 
   // Create Event — college_admin only (super_admin removed per your rule)
   {
@@ -20,6 +31,17 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/events/create-event.component').then(
         (m) => m.CreateEventComponent
+      ),
+  },
+
+  // Manage Registrations — college_admin and super_admin
+  {
+    path: 'admin/registrations',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['college_admin', 'super_admin'] },
+    loadComponent: () =>
+      import('./features/admin/college-admin-registrations.component').then(
+        (m) => m.CollegeAdminRegistrationsComponent
       ),
   },
 

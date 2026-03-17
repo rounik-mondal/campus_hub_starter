@@ -13,7 +13,14 @@ import {
 } from 'rxjs';
 
 import { EventService } from '../../core/services/event.service';
+import { RegistrationService } from '../../core/services/registration.service';
+import { PaymentService } from '../../core/services/payment.service';
+import { TokenService } from '../../core/services/token.service';
 import { EventItem } from '../../models/event.model';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-event-list',
@@ -312,6 +319,28 @@ text-xs font-black shadow-[4px_4px_0px_#000]"
 🏫 {{ event.college?.name || 'Unknown' }}
 </div>
 
+<div class="mt-4 flex flex-wrap gap-2 text-xs font-black">
+  @if (event.isPaid) {
+    <span class="rounded-lg border-2 border-black bg-[#f472b6] px-2 py-1 shadow-[2px_2px_0px_#000]">
+      💰 \${{ event.ticketPrice }}
+    </span>
+  } @else {
+    <span class="rounded-lg border-2 border-black bg-[#bbf7d0] px-2 py-1 shadow-[2px_2px_0px_#000]">
+      🆓 FREE
+    </span>
+  }
+
+  @if (event.isTeamEvent) {
+    <span class="rounded-lg border-2 border-black bg-[#4ade80] px-2 py-1 shadow-[2px_2px_0px_#000]">
+      🤝 Team (Max {{ event.maxTeamSize }})
+    </span>
+  }
+
+  <span class="rounded-lg border-2 border-black bg-[#fde68a] px-2 py-1 shadow-[2px_2px_0px_#000]">
+    🪑 {{ event.maxSeats - (event._count?.registrations || 0) }} / {{ event.maxSeats }} Seats
+  </span>
+</div>
+
 <div class="mt-3 flex justify-center">
 
 <div
@@ -328,19 +357,43 @@ text-sm font-bold">
 
 <div class="mt-3 flex justify-center">
 
-<button
-(click)="openRegister(event)"
-class="border-4 border-black bg-[#bbf7d0]
-px-4 py-2 font-black shadow-[4px_4px_0px_#000]
-hover:bg-green-200
-hover:translate-x-1 hover:translate-y-1
-hover:shadow-none
-active:scale-95
-transition-all">
+@if (userRole() !== 'college_admin' && userRole() !== 'super_admin') {
 
-Register
+  @if (event.registrations?.length && (event.registrations![0].status === 'pending' || event.registrations![0].status === 'approved')) {
+    
+    <button
+    (click)="cancelRegistration(event)"
+    class="border-4 border-black bg-[#f87171]
+    px-4 py-2 font-black shadow-[4px_4px_0px_#000]
+    hover:bg-red-400 hover:translate-x-1 hover:translate-y-1 hover:shadow-none
+    active:scale-95 transition-all">
+      Cancel Registration
+    </button>
 
-</button>
+  } @else if (event.registrations?.length && event.registrations![0].status === 'CANCELLED') {
+
+    <span class="border-4 border-black bg-gray-300 px-4 py-2 font-black shadow-[4px_4px_0px_#000] opacity-70 cursor-not-allowed">
+      Registration Cancelled
+    </span>
+
+  } @else {
+
+    <button
+    (click)="openRegister(event)"
+    [disabled]="(event.maxSeats - (event._count?.registrations || 0)) <= 0"
+    class="border-4 border-black bg-[#bbf7d0]
+    px-4 py-2 font-black shadow-[4px_4px_0px_#000]
+    hover:bg-green-200
+    hover:translate-x-1 hover:translate-y-1
+    hover:shadow-none
+    active:scale-95
+    transition-all disabled:opacity-50 disabled:bg-gray-400 disabled:cursor-not-allowed">
+    {{ (event.maxSeats - (event._count?.registrations || 0)) <= 0 ? 'SOLD OUT' : 'Register' }}
+    </button>
+    
+  }
+
+}
 
 </div>
 
@@ -409,61 +462,105 @@ class="bg-white border-4 border-black
 p-8 w-[420px] rounded-xl
 shadow-[10px_10px_0px_#000] space-y-4">
 
-<h2 class="text-2xl font-black">Register Event</h2>
+@if (registerStep === 'initial') {
+  <h2 class="text-2xl font-black">Team Registration</h2>
+  <p class="text-sm font-bold">{{ selectedEvent?.title }}</p>
+  <div class="bg-[#e0f2fe] border-4 border-black p-4 mb-4 font-black shadow-[4px_4px_0px_#000] text-sm mt-4">
+    Do you want to add teammates to your team now?
+  </div>
+  <div class="flex flex-col gap-3 mt-4">
+    <button (click)="setupTeamAndGoToInvite()" [disabled]="isCreatingTeam" class="border-4 border-black bg-[#4ade80] px-4 py-3 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:opacity-50">
+      {{ isCreatingTeam ? 'Setting up...' : 'Yes, Add Teammates' }}
+    </button>
+    <button (click)="goToSummary()" [disabled]="isCreatingTeam" class="border-4 border-black bg-white px-4 py-3 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
+      No, Skip to Summary
+    </button>
+  </div>
+} @else if (registerStep === 'invite') {
+  <h2 class="text-2xl font-black mb-2">Invite Teammates</h2>
+  <div class="flex gap-2">
+     <input type="email" [(ngModel)]="inviteEmail" placeholder="Teammate Email" class="flex-1 border-4 border-black px-3 py-2 font-bold shadow-[2px_2px_0px_#000]">
+     <button (click)="sendModalInvite()" [disabled]="isSendingInvite" class="border-4 border-black bg-[#fde68a] px-4 py-2 font-black shadow-[2px_2px_0px_#000] disabled:opacity-50">
+       Send
+     </button>
+  </div>
+  @if(sessionInvites.length > 0) {
+     <div class="mt-4 border-t-4 border-black pt-4">
+       <p class="text-xs font-black uppercase text-neutral-500 mb-2">Invited this session:</p>
+       @for(inv of sessionInvites; track $index) {
+         <p class="text-sm font-bold bg-[#e0f2fe] border-4 border-black px-2 py-1 mb-1 shadow-[2px_2px_0px_#000]">{{inv}}</p>
+       }
+     </div>
+  }
+  <button (click)="goToSummary()" class="w-full mt-6 border-4 border-black bg-black text-white px-4 py-2 font-black shadow-[4px_4px_0px_#f472b6] hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
+    Continue to Summary
+  </button>
+} @else if (registerStep === 'summary') {
+  <h2 class="text-2xl font-black">Registration Summary</h2>
+  <div class="border-4 border-black p-4 bg-[#f8fafc] shadow-[4px_4px_0px_#000] mt-4 space-y-2">
+    <p class="font-black text-lg">{{ selectedEvent?.title }}</p>
+    <p class="text-sm font-bold">📅 {{ selectedEvent?.startDate | date:'shortDate' }}</p>
+    <p class="text-sm font-bold">🪑 Remaining Event Seats: {{ selectedEvent?.maxSeats || 0 - (selectedEvent?._count?.registrations || 0) }}</p>
+    @if(selectedEvent?.isTeamEvent) {
+      <p class="text-sm font-bold">🤝 Teammates added: {{ sessionInvites.length }}</p>
+    }
+    @if(selectedEvent?.isPaid) {
+      <p class="font-black text-[#ec4899] mt-2 bg-yellow-200 border-2 border-black px-2 py-1 inline-block shadow-[2px_2px_0px_#000]">💰 Ticket: \${{ selectedEvent?.ticketPrice }}</p>
+    } @else {
+      <p class="font-black text-[#16a34a] mt-2 bg-[#bbf7d0] border-2 border-black px-2 py-1 inline-block shadow-[2px_2px_0px_#000]">🆓 FREE TICKET</p>
+    }
+  </div>
 
-<p class="text-sm font-bold">{{ selectedEvent?.title }}</p>
+  <div class="flex flex-col gap-3 mt-6">
+    <button (click)="submitPaymentOrRegister()" [disabled]="processingPayment" class="border-4 border-black bg-[#f472b6] px-4 py-3 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:opacity-50">
+      {{ processingPayment ? 'Processing...' : (selectedEvent?.isPaid ? 'Confirm Payment' : 'Confirm Registration') }}
+    </button>
+    <button (click)="closeRegister()" [disabled]="processingPayment" class="border-4 border-black bg-white px-4 py-2 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
+      Cancel
+    </button>
+  </div>
+} @else if (registerStep === 'success') {
+  <div class="text-center space-y-4">
+    <div class="bg-[#bbf7d0] border-4 border-black p-4 inline-block shadow-[4px_4px_0px_#000] mb-4">
+      <h3 class="font-black text-xl">SUCCESS!</h3>
+      <p class="text-xs font-bold mt-2">Registration Confirmed</p>
+    </div>
+    
+    <div class="border-4 border-black bg-white p-4">
+      <div class="w-full h-32 bg-gray-200 border-4 border-black flex items-center justify-center font-black">
+        QR CODE [{{ registrationSuccessData?.qrPayload?.substring(0, 15) }}...]
+      </div>
+      <p class="text-xs font-black mt-2">Show this at entry</p>
+    </div>
 
-<input
-type="text"
-placeholder="Full Name"
-[(ngModel)]="registration.name"
-class="w-full border-4 border-black px-3 py-2 font-bold
-shadow-[2px_2px_0px_#000]" />
+    <button (click)="downloadICS()" class="w-full border-4 border-black bg-[#fde68a] px-4 py-2 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none mb-2">
+      📅 Download Calendar Form
+    </button>
 
-<input
-type="email"
-placeholder="Email"
-[(ngModel)]="registration.email"
-class="w-full border-4 border-black px-3 py-2 font-bold
-shadow-[2px_2px_0px_#000]" />
-
-<input
-type="text"
-placeholder="College"
-[(ngModel)]="registration.college"
-class="w-full border-4 border-black px-3 py-2 font-bold
-shadow-[2px_2px_0px_#000]" />
-
-<div class="flex justify-between">
-
-<button
-(click)="submitRegistration()"
-class="border-4 border-black bg-[#bbf7d0]
-px-4 py-2 font-black
-shadow-[4px_4px_0px_#000]
-hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
-
-Submit
-
-</button>
-
-<button
-(click)="closeRegister()"
-class="border-4 border-black bg-[#f87171]
-px-4 py-2 font-black
-shadow-[4px_4px_0px_#000]
-hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
-
-Cancel
-
-</button>
+    <button (click)="closeRegister()" class="w-full border-4 border-black bg-black text-white px-4 py-2 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
+       DONE
+    </button>
+  </div>
+}
 
 </div>
 
 </div>
 
-</div>
+}
 
+<!-- LOGIN PROMPT MODAL -->
+@if (promptLoginModal) {
+<div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+  <div class="bg-white border-4 border-black p-8 w-[400px] rounded-xl shadow-[10px_10px_0px_#000] text-center">
+    <h2 class="text-3xl font-black mb-4 flex justify-center">🔐</h2>
+    <h2 class="text-xl font-black mb-4">Please login to register for this event</h2>
+    <div class="flex justify-center gap-4 mt-6">
+      <button (click)="goToLogin()" class="border-4 border-black bg-[#fde68a] px-4 py-2 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none">Go to Login</button>
+      <button (click)="promptLoginModal = false" class="border-4 border-black bg-white px-4 py-2 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none">Cancel</button>
+    </div>
+  </div>
+</div>
 }
 
 `,
@@ -473,6 +570,18 @@ export class EventListComponent {
 /* your entire logic remains exactly the same */
 
 private eventService = inject(EventService);
+private regService = inject(RegistrationService);
+private paymentService = inject(PaymentService);
+private tokenService = inject(TokenService);
+private snackbar = inject(MatSnackBar);
+private router = inject(Router);
+private http = inject(HttpClient);
+
+isLoggedIn = this.tokenService.isLoggedIn;
+userRole = () => {
+  const user = this.tokenService.getUser();
+  return user ? user.role : null;
+};
 
 skeleton = Array(6);
 pageSize = 6;
@@ -485,10 +594,18 @@ searchQuery = '';
 
 showFilters = false;
 
+promptLoginModal = false;
 showRegisterModal = false;
 selectedEvent: EventItem | null = null;
+registrationSuccessData: any = null;
+processingPayment = false;
 
-registration = { name: '', email: '', college: '' };
+registerStep: 'initial' | 'invite' | 'summary' | 'success' = 'initial';
+createdTeamId: string | null = null;
+inviteEmail = '';
+sessionInvites: string[] = [];
+isCreatingTeam = false;
+isSendingInvite = false;
 
 private searchSubject = new BehaviorSubject<string>('');
 private filterTrigger$ = new BehaviorSubject<void>(undefined);
@@ -564,18 +681,154 @@ this.page$.next(page);
 }
 
 openRegister(event: EventItem) {
-this.selectedEvent = event;
-this.showRegisterModal = true;
+  if (!this.isLoggedIn()) {
+    this.promptLoginModal = true;
+    return;
+  }
+  this.selectedEvent = event;
+  this.registrationSuccessData = null;
+  this.processingPayment = false;
+  this.createdTeamId = null;
+  this.inviteEmail = '';
+  this.sessionInvites = [];
+  
+  if (event.isTeamEvent) {
+     this.registerStep = 'initial';
+  } else {
+     this.registerStep = 'summary';
+  }
+  this.showRegisterModal = true;
+}
+
+setupTeamAndGoToInvite() {
+  if (!this.selectedEvent) return;
+  this.isCreatingTeam = true;
+  
+  this.http.get<any>(`${environment.apiUrl}/teams/event/${this.selectedEvent.id}`).subscribe({
+     next: (res) => {
+       if (res && res.team) {
+          this.createdTeamId = res.team.id;
+          this.isCreatingTeam = false;
+          this.registerStep = 'invite';
+       } else {
+          this.http.post<any>(`${environment.apiUrl}/teams`, { eventId: this.selectedEvent!.id }).subscribe({
+             next: (newRes) => {
+                this.createdTeamId = newRes.team.id;
+                this.isCreatingTeam = false;
+                this.registerStep = 'invite';
+             },
+             error: (err) => {
+                this.isCreatingTeam = false;
+                this.snackbar.open(err.error?.message || "Error creating team", "OK", { duration: 3000 });
+             }
+          });
+       }
+     },
+     error: (err) => {
+       this.isCreatingTeam = false;
+       this.snackbar.open("Failed to load team data", "OK");
+     }
+  });
+}
+
+sendModalInvite() {
+  if (!this.inviteEmail || !this.createdTeamId) return;
+  this.isSendingInvite = true;
+  this.http.post<any>(`${environment.apiUrl}/teams/invite`, { teamId: this.createdTeamId, inviteeEmail: this.inviteEmail }).subscribe({
+     next: () => {
+       this.snackbar.open("Invited!", "OK", { duration: 2000 });
+       this.sessionInvites.push(this.inviteEmail);
+       this.inviteEmail = '';
+       this.isSendingInvite = false;
+     },
+     error: (err) => {
+       this.isSendingInvite = false;
+       this.snackbar.open(err.error?.message || "Failed to invite", "OK", { duration: 3000 });
+     }
+  });
+}
+
+goToSummary() {
+  this.registerStep = 'summary';
+}
+
+submitPaymentOrRegister() {
+   if (this.selectedEvent?.isPaid) {
+      this.submitPaymentAndRegister();
+   } else {
+      this.submitRegistration();
+   }
+}
+
+cancelRegistration(event: EventItem) {
+  if (confirm("Are you sure you want to cancel your registration for this event?")) {
+    this.regService.cancelRegistration(event.id).subscribe({
+      next: () => {
+        this.snackbar.open("Registration Cancelled", "OK", { duration: 3000 });
+        this.filterTrigger$.next();
+      },
+      error: (err) => this.snackbar.open(err.error?.message || "Failed to cancel", "OK", { duration: 3000 })
+    });
+  }
+}
+
+goToLogin() {
+  this.router.navigate(['/login']);
 }
 
 closeRegister() {
 this.showRegisterModal = false;
-this.registration = { name: '', email: '', college: '' };
+this.registrationSuccessData = null;
+this.processingPayment = false;
 }
 
 submitRegistration() {
-console.log({ eventId: this.selectedEvent?.id, ...this.registration });
-this.closeRegister();
+  if (!this.selectedEvent) return;
+  this.processingPayment = true;
+  this.regService.registerForEvent(this.selectedEvent.id).subscribe({
+    next: (res) => {
+      this.processingPayment = false;
+      this.registrationSuccessData = {
+        qrPayload: res.qrPayload,
+        icsData: res.icsData
+      };
+      this.registerStep = 'success';
+      this.snackbar.open("✅ Registered successfully!", "OK", { duration: 3000 });
+      this.filterTrigger$.next();
+    },
+    error: (err) => {
+      this.processingPayment = false;
+      this.snackbar.open(err.error?.message || "Registration failed", "OK", { duration: 3000 });
+    }
+  });
+}
+
+submitPaymentAndRegister() {
+  if (!this.selectedEvent) return;
+  
+  this.processingPayment = true;
+  this.paymentService.simulatePayment(this.selectedEvent.id, this.selectedEvent.ticketPrice).subscribe({
+    next: (res) => {
+      this.snackbar.open("✅ Payment successful! Registering...", "OK", { duration: 2000 });
+      // On payment success, proceed to register
+      this.submitRegistration();
+    },
+    error: (err) => {
+      this.processingPayment = false;
+      this.snackbar.open(err.error?.message || "Payment failed", "OK", { duration: 3000 });
+    }
+  });
+}
+
+downloadICS() {
+  if (!this.registrationSuccessData?.icsData) return;
+  const blob = new Blob([this.registrationSuccessData.icsData], { type: 'text/calendar' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'event.ics';
+  a.click();
+  window.URL.revokeObjectURL(url);
 }
 
 private buildActiveFilters() {

@@ -15,6 +15,15 @@ export interface EventItem {
   endDate: string;
   createdAt: string;
   college?: College;
+  maxSeats: number;
+  isPaid: boolean;
+  ticketPrice: number;
+  isTeamEvent: boolean;
+  maxTeamSize: number;
+  _count?: {
+    registrations: number;
+  };
+  registrations?: { id: string; status: string }[];
 }
 
 export interface EventListResponse {

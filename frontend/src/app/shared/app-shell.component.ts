@@ -40,9 +40,21 @@ export class AppShellComponent {
       path: '/events' // public
     },
     {
+      label: 'MY EVENTS',
+      icon: '🎟️',
+      path: '/my-registrations',
+      roles: ['student']
+    },
+    {
       label: 'CREATE EVENT',
       icon: '✦',
       path: '/admin/create-event',
+      roles: ['college_admin', 'super_admin']
+    },
+    {
+      label: 'MANAGE REGISTRATIONS',
+      icon: '📋',
+      path: '/admin/registrations',
       roles: ['college_admin', 'super_admin']
     },
     {

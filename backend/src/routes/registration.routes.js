@@ -2,6 +2,7 @@ import express from "express";
 
 import {
   registerForEvent,
+  cancelRegistration,
   getMyRegistrations,
   updateRegistrationStatus,
   getEventParticipants,
@@ -9,7 +10,7 @@ import {
   deleteEvent
 } from "../controllers/registration.controller.js";
 
-import { protect, authorize } from "../middlewares/auth.middleware.js";
+import { verifyAuth, authorize } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
@@ -19,9 +20,20 @@ const router = express.Router();
 */
 router.post(
   "/event/:eventId",
-  protect,
+  verifyAuth,
   authorize("student"),
   registerForEvent
+);
+
+/*
+  Student Cancel Registration
+  Endpoint: PATCH /api/registrations/cancel/:eventId
+*/
+router.patch(
+  "/cancel/:eventId",
+  verifyAuth,
+  authorize("student"),
+  cancelRegistration
 );
 
 /*
@@ -30,7 +42,7 @@ router.post(
 */
 router.get(
   "/me",
-  protect,
+  verifyAuth,
   authorize("student"),
   getMyRegistrations
 );
@@ -41,7 +53,7 @@ router.get(
 */
 router.get(
   "/event/:eventId/participants",
-  protect,
+  verifyAuth,
   authorize("college_admin", "super_admin"),
   getEventParticipants
 );
@@ -52,7 +64,7 @@ router.get(
 */
 router.patch(
   "/:id/status",
-  protect,
+  verifyAuth,
   authorize("college_admin", "super_admin"),
   updateRegistrationStatus
 );
@@ -63,7 +75,7 @@ router.patch(
 */
 router.get(
   "/overview", 
-  protect,
+  verifyAuth,
   authorize("super_admin"),
   getPlatformEvents
 );
@@ -75,7 +87,7 @@ router.get(
 */
 router.delete(
   "/event/:eventId/delete", 
-  protect,
+  verifyAuth,
   authorize("college_admin", "super_admin"),
   deleteEvent
 );

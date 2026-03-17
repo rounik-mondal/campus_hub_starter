@@ -7,19 +7,18 @@ import {
   getEventById,
 } from "../controllers/event.controller.js";
 
-import { protect, authorize } from "../middlewares/auth.middleware.js";
-import { optionalProtect } from "../middlewares/optionalAuth.middleware.js";
+import { verifyAuth, authorize } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
 // 🌍 public but role-aware
-router.get("/", optionalProtect, getAllEvents);
-router.get("/:id", optionalProtect, getEventById);
+router.get("/", verifyAuth, getAllEvents);
+router.get("/:id", verifyAuth, getEventById);
 
 // 🛡️ admin only
 router.post(
   "/",
-  protect,
+  verifyAuth,
   authorize("college_admin", "super_admin"),
   createEvent
 );

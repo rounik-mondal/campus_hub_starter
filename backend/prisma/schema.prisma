@@ -17,6 +17,7 @@ enum RegistrationStatus {
   pending
   approved
   rejected
+  CANCELLED
 }
 
 enum EventScope {
@@ -53,6 +54,10 @@ model User {
   adminLogs     AdminLog[]
   Event         Event[]
 
+  createdTeams  Team[]         @relation("TeamCreator")
+  teamMembers   TeamMember[]
+  invitesSent   Invitation[]   @relation("InvitesSent")
+
   @@index([email])
   @@index([collegeId])
 }
@@ -69,12 +74,20 @@ model Event {
   endDate     DateTime
   createdAt   DateTime   @default(now())
 
+  maxSeats    Int        @default(100)
+  isPaid      Boolean    @default(false)
+  ticketPrice Float      @default(0)
+  isTeamEvent Boolean    @default(false)
+  maxTeamSize Int        @default(1)
+
   createdBy String
 
   college       College        @relation(fields: [collegeId], references: [id])
   registrations Registration[]
   feedbacks     Feedback[]
   creator       User           @relation(fields: [createdBy], references: [id])
+  teams         Team[]
+  invitations   Invitation[]
 
   @@index([collegeId])
   @@index([category])
@@ -121,4 +134,61 @@ model AdminLog {
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
+}
+
+model Team {
+  id        String   @id @default(uuid())
+  eventId   String
+  createdBy String
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  creator   User     @relation("TeamCreator", fields: [createdBy], references: [id])
+
+  members       TeamMember[]
+  invitations   Invitation[]
+
+  @@index([eventId])
+  @@index([createdBy])
+}
+
+model TeamMember {
+  id      String @id @default(uuid())
+  teamId  String
+  userId  String
+  role    String @default("MEMBER") // CREATOR, MEMBER
+
+  team    Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id])
+
+  @@unique([teamId, userId])
+}
+
+enum InvitationStatus {
+  pending
+  accepted
+  declined
+  payment_pending
+  payment_completed
+  awaiting_admin_approval
+}
+
+model Invitation {
+  id           String           @id @default(uuid())
+  inviterId    String
+  inviteeEmail String
+  teamId       String
+  eventId      String
+  status       InvitationStatus @default(pending)
+  paymentStatus String          @default("unpaid")
+  seatReserved  Boolean         @default(false)
+  createdAt    DateTime         @default(now())
+
+  inviter      User     @relation("InvitesSent", fields: [inviterId], references: [id])
+  team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([inviteeEmail])
+  @@index([teamId])
+  @@index([eventId])
 }

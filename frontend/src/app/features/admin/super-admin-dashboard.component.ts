@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 
 import { CollegeService } from '../../core/services/college.service';
 import { EventService } from '../../core/services/event.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 
 @Component({
   selector: 'app-super-admin-dashboard',
@@ -57,6 +58,24 @@ import { EventService } from '../../core/services/event.service';
           <span class="stat-value">{{ totalAdmins() }}</span>
         </div>
         <p class="stat-label">COLLEGE ADMINS</p>
+      </div>
+      
+      <!-- Total Students -->
+      <div class="stat-card bg-[#a78bfa]">
+        <div class="flex items-start justify-between">
+          <span class="stat-icon">👨‍🎓</span>
+          <span class="stat-value">{{ totalStudents() }}</span>
+        </div>
+        <p class="stat-label">TOTAL STUDENTS</p>
+      </div>
+      
+      <!-- Total Registrations -->
+      <div class="stat-card bg-[#60a5fa]">
+        <div class="flex items-start justify-between">
+          <span class="stat-icon">🎟️</span>
+          <span class="stat-value">{{ totalRegistrations() }}</span>
+        </div>
+        <p class="stat-label">TOTAL REGISTRATIONS</p>
       </div>
 
     </div>
@@ -164,31 +183,27 @@ import { EventService } from '../../core/services/event.service';
 })
 export class SuperAdminDashboardComponent implements OnInit {
 
-  private collegeService = inject(CollegeService);
-  private eventService = inject(EventService);
+  private analyticsService = inject(AnalyticsService);
 
   totalColleges = signal(0);
   totalEvents = signal(0);
   totalAdmins = signal(0);
+  totalStudents = signal(0);
+  totalRegistrations = signal(0);
 
   ngOnInit() {
     this.loadStats();
   }
 
   private loadStats() {
-    // Load total colleges
-    this.collegeService.getColleges().subscribe({
-      next: (res) => this.totalColleges.set(res.colleges.length),
-    });
-
-    // Load total events
-    this.eventService.getEvents().subscribe({
-      next: (res: any) => this.totalEvents.set(res.events?.length || 0),
-    });
-
-    // Load total admins (example: using same endpoint, adjust as needed)
-    this.collegeService.getAdmins().subscribe({
-      next: (res) => this.totalAdmins.set(res.admins.length), // placeholder – replace with actual admin count
+    this.analyticsService.getPlatformAnalytics().subscribe({
+      next: (res) => {
+        this.totalColleges.set(res.totalColleges);
+        this.totalEvents.set(res.totalEvents);
+        this.totalAdmins.set(res.totalAdmins);
+        this.totalStudents.set(res.totalStudents);
+        this.totalRegistrations.set(res.totalRegistrations);
+      }
     });
   }
 }
