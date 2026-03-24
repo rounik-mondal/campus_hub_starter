@@ -7,12 +7,13 @@ export interface Registration {
   id: string;
   eventId: string;
   userId: string;
-  status: 'pending' | 'approved' | 'rejected' | 'CANCELLED';
+  status: 'pending' | 'approved' | 'rejected' | 'CANCELLED' | 'payment_pending' | 'awaiting_admin_approval';
   timestamp: string;
   event?: any;
   qrPayload?: string;
   team?: any;
   invitations?: any[];
+  isInvitePlaceholder?: boolean;
 }
 
 @Injectable({

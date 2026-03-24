@@ -45,8 +45,9 @@ import { environment } from '../../../environments/environment';
                 [class.bg-[#fde68a]]="reg.status === 'pending'"
                 [class.bg-[#bbf7d0]]="reg.status === 'approved'"
                 [class.bg-[#fecaca]]="reg.status === 'rejected'"
-                [class.bg-[#9ca3af]]="reg.status === 'CANCELLED'">
-                {{ reg.status | uppercase }}
+                [class.bg-[#9ca3af]]="reg.status === 'CANCELLED'"
+                [class.bg-[#e0f2fe]]="reg.status === 'awaiting_admin_approval'">
+                {{ reg.status.replace('_', ' ').replace('_', ' ') | uppercase }}
               </span>
             </div>
 

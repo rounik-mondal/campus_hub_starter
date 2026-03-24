@@ -177,7 +177,38 @@ export const getMyRegistrationsService = async (user) => {
     };
   }));
 
-  return enriched;
+  const inboundInvitations = await prisma.invitation.findMany({
+    where: { 
+      inviteeEmail: user.email, 
+      status: "awaiting_admin_approval"
+    },
+    include: {
+      team: {
+        include: {
+          members: { include: { user: { select: { name: true, email: true } } } },
+          invitations: true,
+          event: { include: { college: true } }
+        }
+      }
+    }
+  });
+
+  const inviteRegistrations = inboundInvitations.map(inv => {
+    return {
+      id: inv.id,
+      eventId: inv.team.eventId,
+      userId: user.id,
+      status: inv.status,
+      timestamp: inv.createdAt,
+      event: inv.team.event,
+      qrPayload: null,
+      team: inv.team,
+      invitations: inv.team.invitations,
+      isInvitePlaceholder: true
+    };
+  });
+
+  return [...enriched, ...inviteRegistrations].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 };
 
 export const getEventParticipantsService = async (eventId, admin) => {
