@@ -160,7 +160,16 @@ export const getMyPendingInvitationsService = async (user) => {
   return prisma.invitation.findMany({
     where: { inviteeEmail: user.email, status: "pending" },
     include: {
-      team: true,
+      team: {
+        include: {
+          members: {
+            include: { user: { select: { name: true, email: true } } }
+          },
+          invitations: {
+            where: { status: { in: ["accepted", "awaiting_admin_approval", "payment_pending", "pending"] } }
+          }
+        }
+      },
       event: true,
       inviter: { select: { id: true, name: true, email: true } }
     }
@@ -213,4 +222,29 @@ export const adminApproveInviteService = async (invitationId, status, admin) => 
       data: { status: "declined", paymentStatus: "refunded", seatReserved: false }
     });
   }
+};
+
+export const searchUsersForTeamService = async (eventId, query, user) => {
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
+  if (!event) throw new Error("Event not found");
+
+  const whereClause = {
+    role: "student",
+    OR: [
+      { email: { contains: query, mode: "insensitive" } },
+      { name: { contains: query, mode: "insensitive" } }
+    ]
+  };
+
+  if (event.scope === "COLLEGE") {
+    whereClause.collegeId = event.collegeId;
+  }
+
+  const users = await prisma.user.findMany({
+    where: whereClause,
+    select: { id: true, name: true, email: true },
+    take: 5
+  });
+
+  return users;
 };

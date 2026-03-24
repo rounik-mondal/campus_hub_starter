@@ -46,6 +46,12 @@ export class AppShellComponent {
       roles: ['student']
     },
     {
+      label: 'MY INVITATIONS',
+      icon: '✉️',
+      path: '/my-invitations',
+      roles: ['student']
+    },
+    {
       label: 'CREATE EVENT',
       icon: '✦',
       path: '/admin/create-event',

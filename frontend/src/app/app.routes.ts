@@ -23,6 +23,17 @@ export const routes: Routes = [
       ),
   },
 
+  // Student Invitations
+  {
+    path: 'my-invitations',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['student'] },
+    loadComponent: () =>
+      import('./features/events/my-invitations.component').then(
+        (m) => m.MyInvitationsComponent
+      ),
+  },
+
   // Create Event — college_admin only (super_admin removed per your rule)
   {
     path: 'admin/create-event',

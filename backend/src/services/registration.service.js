@@ -90,6 +90,9 @@ export const registerForEventService = async (eventId, user) => {
       qrPayload,
       icsData
     };
+  }, {
+    maxWait: 10000,
+    timeout: 15000
   });
 };
 
@@ -195,13 +198,32 @@ export const getEventParticipantsService = async (eventId, admin) => {
     throw new Error("Not authorized");
   }
 
-  return prisma.registration.findMany({
+  const registrations = await prisma.registration.findMany({
     where: { eventId },
     include: {
       user: true
     }
   });
 
+  const awaitingInvites = await prisma.invitation.findMany({
+    where: { eventId, status: "awaiting_admin_approval" }
+  });
+
+  const inviteParticipants = await Promise.all(
+    awaitingInvites.map(async (inv) => {
+      const user = await prisma.user.findUnique({ where: { email: inv.inviteeEmail } });
+      return {
+        id: inv.id,
+        isInvitation: true,
+        eventId: inv.eventId,
+        userId: user?.id,
+        status: inv.status,
+        user
+      };
+    })
+  );
+
+  return [...registrations, ...inviteParticipants];
 };
 
 

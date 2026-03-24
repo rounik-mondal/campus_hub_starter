@@ -63,20 +63,20 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                     [class.bg-[#bbf7d0]]="p.status === 'approved'"
                     [class.bg-[#fecaca]]="p.status === 'rejected'"
                     [class.bg-[#9ca3af]]="p.status === 'CANCELLED'">
-                    {{ p.status | uppercase }}
+                    {{ p.isInvitation ? 'TEAM INVITE: ' : '' }}{{ p.status | uppercase }}
                   </span>
                 </div>
 
-                @if (p.status === 'pending' || p.status === 'approved' || p.status === 'rejected') {
+                @if (p.status === 'pending' || p.status === 'approved' || p.status === 'rejected' || p.status === 'awaiting_admin_approval') {
                   <div class="flex gap-2 mt-4 pt-4 border-t-4 border-black">
-                    @if (p.status !== 'approved') {
-                      <button (click)="updateStatus(p.id, 'approved')"
+                    @if (p.status !== 'approved' && p.status !== 'accepted') {
+                      <button (click)="updateStatus(p, 'approved')"
                         class="flex-1 bg-[#bbf7d0] border-4 border-black font-black py-2 shadow-[2px_2px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all active:scale-95 text-xs">
                         APPROVE
                       </button>
                     }
-                    @if (p.status !== 'rejected') {
-                      <button (click)="updateStatus(p.id, 'rejected')"
+                    @if (p.status !== 'rejected' && p.status !== 'declined') {
+                      <button (click)="updateStatus(p, 'rejected')"
                         class="flex-1 bg-[#f87171] border-4 border-black font-black py-2 shadow-[2px_2px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all active:scale-95 text-xs text-white">
                         REJECT
                       </button>
@@ -140,15 +140,28 @@ export class CollegeAdminRegistrationsComponent implements OnInit {
     });
   }
 
-  updateStatus(registrationId: string, status: string) {
-    this.regService.updateRegistrationStatus(registrationId, status).subscribe({
-      next: () => {
-        this.snackbar.open(`Registration ${status}`, "OK", { duration: 3000 });
-        this.loadParticipants(this.selectedEventId);
-      },
-      error: (err) => {
-        this.snackbar.open(err.error?.message || "Failed to update status", "OK", { duration: 3000 });
-      }
-    });
+  updateStatus(participant: any, status: string) {
+    if (participant.isInvitation) {
+      const backendStatus = status === 'rejected' ? 'declined' : 'approved';
+      this.regService.adminApproveInvite(participant.id, backendStatus).subscribe({
+        next: () => {
+          this.snackbar.open(`Invitation ${backendStatus}`, "OK", { duration: 3000 });
+          this.loadParticipants(this.selectedEventId);
+        },
+        error: (err) => {
+          this.snackbar.open(err.error?.message || "Failed to update invitation status", "OK", { duration: 3000 });
+        }
+      });
+    } else {
+      this.regService.updateRegistrationStatus(participant.id, status).subscribe({
+        next: () => {
+          this.snackbar.open(`Registration ${status}`, "OK", { duration: 3000 });
+          this.loadParticipants(this.selectedEventId);
+        },
+        error: (err) => {
+          this.snackbar.open(err.error?.message || "Failed to update status", "OK", { duration: 3000 });
+        }
+      });
+    }
   }
 }

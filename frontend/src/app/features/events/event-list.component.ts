@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -478,11 +478,22 @@ shadow-[10px_10px_0px_#000] space-y-4">
   </div>
 } @else if (registerStep === 'invite') {
   <h2 class="text-2xl font-black mb-2">Invite Teammates</h2>
-  <div class="flex gap-2">
-     <input type="email" [(ngModel)]="inviteEmail" placeholder="Teammate Email" class="flex-1 border-4 border-black px-3 py-2 font-bold shadow-[2px_2px_0px_#000]">
-     <button (click)="sendModalInvite()" [disabled]="isSendingInvite" class="border-4 border-black bg-[#fde68a] px-4 py-2 font-black shadow-[2px_2px_0px_#000] disabled:opacity-50">
-       Send
-     </button>
+  <div class="relative mb-2">
+    <div class="flex gap-2">
+       <input type="text" autocomplete="off" [(ngModel)]="inviteEmail" (ngModelChange)="onInviteSearchChange($event)" placeholder="Search Name or Email..." class="flex-1 border-4 border-black px-3 py-2 font-bold shadow-[2px_2px_0px_#000] focus:outline-none focus:translate-x-1 focus:translate-y-1 focus:shadow-none transition-all">
+       <button (click)="sendModalInvite()" [disabled]="isSendingInvite || !inviteEmail" class="border-4 border-black bg-[#fde68a] px-4 py-2 font-black shadow-[2px_2px_0px_#000] disabled:opacity-50 hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+         Send
+       </button>
+    </div>
+    @if (searchResults.length > 0) {
+       <div class="absolute left-0 right-0 top-full mt-2 border-4 border-black bg-white max-h-48 overflow-y-auto z-50 shadow-[4px_4px_0px_#000]">
+         @for (user of searchResults; track user.id) {
+            <div (click)="selectSearchResult(user)" class="p-3 border-b-2 border-dashed border-black hover:bg-[#e0f2fe] cursor-pointer font-black transition-colors">
+               {{ user.name }} <span class="text-xs text-neutral-600 block">{{ user.email }}</span>
+            </div>
+         }
+       </div>
+    }
   </div>
   @if(sessionInvites.length > 0) {
      <div class="mt-4 border-t-4 border-black pt-4">
@@ -576,6 +587,7 @@ private tokenService = inject(TokenService);
 private snackbar = inject(MatSnackBar);
 private router = inject(Router);
 private http = inject(HttpClient);
+private cdr = inject(ChangeDetectorRef);
 
 isLoggedIn = this.tokenService.isLoggedIn;
 userRole = () => {
@@ -598,6 +610,8 @@ promptLoginModal = false;
 showRegisterModal = false;
 selectedEvent: EventItem | null = null;
 registrationSuccessData: any = null;
+searchResults: any[] = [];
+searchTimeout: any;
 processingPayment = false;
 
 registerStep: 'initial' | 'invite' | 'summary' | 'success' = 'initial';
@@ -703,6 +717,7 @@ openRegister(event: EventItem) {
 setupTeamAndGoToInvite() {
   if (!this.selectedEvent) return;
   this.isCreatingTeam = true;
+  this.cdr.detectChanges();
   
   this.http.get<any>(`${environment.apiUrl}/teams/event/${this.selectedEvent.id}`).subscribe({
      next: (res) => {
@@ -710,25 +725,51 @@ setupTeamAndGoToInvite() {
           this.createdTeamId = res.team.id;
           this.isCreatingTeam = false;
           this.registerStep = 'invite';
+          this.cdr.detectChanges();
        } else {
           this.http.post<any>(`${environment.apiUrl}/teams`, { eventId: this.selectedEvent!.id }).subscribe({
              next: (newRes) => {
-                this.createdTeamId = newRes.team.id;
+                this.createdTeamId = newRes?.team?.id;
                 this.isCreatingTeam = false;
                 this.registerStep = 'invite';
+                this.cdr.detectChanges();
              },
              error: (err) => {
                 this.isCreatingTeam = false;
-                this.snackbar.open(err.error?.message || "Error creating team", "OK", { duration: 3000 });
+                this.cdr.detectChanges();
+                this.snackbar.open(err?.error?.message || "Error creating team", "OK", { duration: 3000 });
              }
           });
        }
      },
      error: (err) => {
        this.isCreatingTeam = false;
+       this.cdr.detectChanges();
        this.snackbar.open("Failed to load team data", "OK");
      }
   });
+}
+
+onInviteSearchChange(query: string) {
+  if (this.searchTimeout) clearTimeout(this.searchTimeout);
+  if (!query || query.length < 2) {
+     this.searchResults = [];
+     return;
+  }
+  
+  this.searchTimeout = setTimeout(() => {
+     if (!this.selectedEvent?.id) return;
+     this.http.get<any>(`${environment.apiUrl}/teams/search-users?eventId=${this.selectedEvent.id}&query=${query}`)
+       .subscribe({
+         next: (res) => this.searchResults = res.users || [],
+         error: () => this.searchResults = []
+       });
+  }, 300);
+}
+
+selectSearchResult(user: any) {
+  this.inviteEmail = user.email;
+  this.searchResults = [];
 }
 
 sendModalInvite() {

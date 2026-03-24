@@ -7,7 +7,8 @@ import {
   getMyTeamByEventService,
   getMyPendingInvitationsService,
   payForInviteService,
-  adminApproveInviteService
+  adminApproveInviteService,
+  searchUsersForTeamService
 } from "../services/team.service.js";
 
 export const createTeam = async (req, res) => {
@@ -79,6 +80,19 @@ export const adminApproveInvite = async (req, res) => {
     const { status } = req.body; // "approved" or "declined"
     const response = await adminApproveInviteService(id, status, req.user);
     res.status(200).json({ message: `Invite ${status}`, response });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+export const searchUsers = async (req, res) => {
+  try {
+    const { eventId, query } = req.query;
+    if (!eventId || !query) {
+      return res.status(400).json({ message: "eventId and query are required" });
+    }
+    const users = await searchUsersForTeamService(eventId, query, req.user);
+    res.status(200).json({ users });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

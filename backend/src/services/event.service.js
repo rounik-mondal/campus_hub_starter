@@ -72,13 +72,8 @@ export const getAllEventsService = async (filters, user) => {
 
   // Case 3: college_admins
   else if (user.role === "college_admin") {
-    where.OR = [
-      { scope: "GLOBAL" },
-      {
-        scope: "COLLEGE",
-        collegeId: user.collegeId ?? "__none__",
-      },
-    ];
+    // Admins only view native college events to manage them
+    where.collegeId = user.collegeId ?? "__none__";
   }
 
   // Case 4: super_admin see all (no extra filter)

@@ -6,7 +6,8 @@ import {
   inviteToTeam,
   respondToInvite,
   getTeamByEvent,
-  getPendingInvitations
+  getPendingInvitations,
+  searchUsers
 } from "../controllers/team.controller.js";
 import { verifyAuth } from "../middlewares/auth.middleware.js";
 
@@ -15,6 +16,7 @@ const router = Router();
 router.use(verifyAuth);
 
 router.post("/", createTeam);
+router.get("/search-users", searchUsers);
 router.post("/invite", inviteToTeam);
 router.post("/respond", respondToInvite);
 router.get("/event/:eventId", getTeamByEvent);

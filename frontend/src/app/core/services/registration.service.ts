@@ -41,4 +41,8 @@ export class RegistrationService {
   updateRegistrationStatus(registrationId: string, status: string): Observable<any> {
     return this.http.patch(`${this.apiUrl}/${registrationId}/status`, { status });
   }
+
+  adminApproveInvite(invitationId: string, status: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/invitations/${invitationId}/approve`, { status });
+  }
 }

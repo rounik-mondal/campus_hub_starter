@@ -119,19 +119,31 @@ import { environment } from '../../../environments/environment';
 
   <!-- INVITE MODAL -->
   @if (showInviteModal) {
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="bg-white border-4 border-black p-8 w-[400px] rounded-xl shadow-[10px_10px_0px_#000] space-y-4">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div class="bg-white border-4 border-black p-6 md:p-8 w-full max-w-md rounded-xl shadow-[10px_10px_0px_#000] flex flex-col gap-4 max-h-[90vh]">
         <h2 class="text-2xl font-black">Invite Teammate</h2>
         <p class="text-sm font-bold text-neutral-600">Event: {{ selectedRegForInvite?.event?.title }}</p>
         
-        <input type="email" [(ngModel)]="inviteEmail" placeholder="Student Email Address" class="w-full border-4 border-black px-4 py-2 font-bold shadow-[2px_2px_0px_#000]">
+        <div class="relative">
+          <input type="text" [(ngModel)]="inviteEmail" (ngModelChange)="onSearchChange($event)" placeholder="Search Name or Email..." autocomplete="off" class="w-full border-4 border-black px-4 py-3 font-bold shadow-[4px_4px_0px_#000] focus:outline-none focus:translate-x-1 focus:translate-y-1 focus:shadow-none transition-all">
+          
+          @if (searchResults.length > 0) {
+             <div class="absolute left-0 right-0 top-full mt-2 border-4 border-black bg-white max-h-48 overflow-y-auto z-50 shadow-[4px_4px_0px_#000]">
+               @for (user of searchResults; track user.id) {
+                  <div (click)="selectSearchResult(user)" class="p-3 border-b-2 border-dashed border-black hover:bg-[#e0f2fe] cursor-pointer font-black transition-colors">
+                     {{ user.name }} <span class="text-xs text-neutral-600 block">{{ user.email }}</span>
+                  </div>
+               }
+             </div>
+          }
+        </div>
         
-        <div class="flex justify-between mt-6">
-          <button (click)="sendInvite()" [disabled]="sendingInvite" class="border-4 border-black bg-[#bbf7d0] px-4 py-2 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 disabled:opacity-50 transition-all">
-            {{ sendingInvite ? 'Sending...' : 'Send Invite' }}
+        <div class="flex flex-col sm:flex-row gap-4 mt-4">
+          <button (click)="sendInvite()" [disabled]="sendingInvite || !inviteEmail" class="flex-1 border-4 border-black bg-[#bbf7d0] px-4 py-3 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:opacity-50 transition-all">
+            {{ sendingInvite ? 'SENDING...' : 'SEND INVITE' }}
           </button>
-          <button (click)="closeInviteModal()" [disabled]="sendingInvite" class="border-4 border-black bg-white px-4 py-2 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 disabled:opacity-50 transition-all">
-            Cancel
+          <button (click)="closeInviteModal()" [disabled]="sendingInvite" class="flex-1 border-4 border-black bg-[#fecaca] px-4 py-3 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:opacity-50 transition-all">
+            CANCEL
           </button>
         </div>
       </div>
@@ -153,11 +165,35 @@ export class MyRegistrationsComponent implements OnInit {
   selectedRegForInvite: Registration | null = null;
   inviteEmail = '';
   sendingInvite = false;
+  searchResults: any[] = [];
+  searchTimeout: any;
 
   currentUserId = this.tokenService.getUser()?.id;
 
   ngOnInit() {
     this.fetchData();
+  }
+
+  onSearchChange(query: string) {
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
+    if (!query || query.length < 2) {
+       this.searchResults = [];
+       return;
+    }
+    
+    this.searchTimeout = setTimeout(() => {
+       if (!this.selectedRegForInvite?.event?.id) return;
+       this.http.get<any>(`${environment.apiUrl}/teams/search-users?eventId=${this.selectedRegForInvite.event.id}&query=${query}`)
+         .subscribe({
+           next: (res) => this.searchResults = res.users || [],
+           error: () => this.searchResults = []
+         });
+    }, 300);
+  }
+
+  selectSearchResult(user: any) {
+    this.inviteEmail = user.email;
+    this.searchResults = [];
   }
 
   fetchData() {
@@ -192,12 +228,14 @@ export class MyRegistrationsComponent implements OnInit {
     this.selectedRegForInvite = reg;
     this.showInviteModal = true;
     this.inviteEmail = '';
+    this.searchResults = [];
   }
 
   closeInviteModal() {
     this.showInviteModal = false;
     this.selectedRegForInvite = null;
     this.inviteEmail = '';
+    this.searchResults = [];
   }
 
   sendInvite() {
