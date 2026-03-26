@@ -21,6 +21,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import * as QRCode from 'qrcode';
 
 @Component({
   selector: 'app-event-list',
@@ -362,7 +363,7 @@ text-sm font-bold">
   @if (event.registrations?.length && (event.registrations![0].status === 'pending' || event.registrations![0].status === 'approved')) {
     
     <button
-    (click)="cancelRegistration(event)"
+    (click)="openCancelModal(event)"
     class="border-4 border-black bg-[#f87171]
     px-4 py-2 font-black shadow-[4px_4px_0px_#000]
     hover:bg-red-400 hover:translate-x-1 hover:translate-y-1 hover:shadow-none
@@ -537,9 +538,13 @@ shadow-[10px_10px_0px_#000] space-y-4">
       <p class="text-xs font-bold mt-2">Registration Confirmed</p>
     </div>
     
-    <div class="border-4 border-black bg-white p-4">
-      <div class="w-full h-32 bg-gray-200 border-4 border-black flex items-center justify-center font-black">
-        QR CODE [{{ registrationSuccessData?.qrPayload?.substring(0, 15) }}...]
+    <div class="border-4 border-black bg-white p-4 flex flex-col items-center">
+      <div class="w-full h-auto bg-gray-200 border-4 border-black flex items-center justify-center p-2 min-h-[140px]">
+         @if (qrCodeDataUrl) {
+            <img [src]="qrCodeDataUrl" alt="QR Code" class="w-32 h-32 object-contain" />
+         } @else {
+            <span class="font-black text-xs">GENERATING QR...</span>
+         }
       </div>
       <p class="text-xs font-black mt-2">Show this at entry</p>
     </div>
@@ -572,6 +577,25 @@ shadow-[10px_10px_0px_#000] space-y-4">
     </div>
   </div>
 </div>
+}
+
+<!-- CANCEL MODAL -->
+@if (showCancelModal) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white border-4 border-black p-6 md:p-8 w-full max-w-md rounded-xl shadow-[10px_10px_0px_#000] flex flex-col gap-4 text-center">
+      <h2 class="text-3xl font-black mb-2">⚠️ Cancel Registration</h2>
+      <p class="text-sm font-bold text-neutral-600 mb-4">Are you sure you want to cancel your registration for this event? This action cannot be undone.</p>
+      
+      <div class="flex flex-col sm:flex-row gap-4 mt-2">
+        <button (click)="confirmCancel()" class="flex-1 border-4 border-black bg-[#f87171] px-4 py-3 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all text-white">
+          YES, CANCEL IT
+        </button>
+        <button (click)="closeCancelModal()" class="flex-1 border-4 border-black bg-white px-4 py-3 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+          GO BACK
+        </button>
+      </div>
+    </div>
+  </div>
 }
 
 `,
@@ -613,6 +637,7 @@ registrationSuccessData: any = null;
 searchResults: any[] = [];
 searchTimeout: any;
 processingPayment = false;
+qrCodeDataUrl: string | null = null;
 
 registerStep: 'initial' | 'invite' | 'summary' | 'success' = 'initial';
 createdTeamId: string | null = null;
@@ -801,16 +826,32 @@ submitPaymentOrRegister() {
    }
 }
 
-cancelRegistration(event: EventItem) {
-  if (confirm("Are you sure you want to cancel your registration for this event?")) {
-    this.regService.cancelRegistration(event.id).subscribe({
-      next: () => {
-        this.snackbar.open("Registration Cancelled", "OK", { duration: 3000 });
-        this.filterTrigger$.next();
-      },
-      error: (err) => this.snackbar.open(err.error?.message || "Failed to cancel", "OK", { duration: 3000 })
-    });
-  }
+showCancelModal = false;
+selectedEventToCancel: EventItem | null = null;
+
+openCancelModal(event: EventItem) {
+  this.selectedEventToCancel = event;
+  this.showCancelModal = true;
+}
+
+closeCancelModal() {
+  this.showCancelModal = false;
+  this.selectedEventToCancel = null;
+}
+
+confirmCancel() {
+  if (!this.selectedEventToCancel) return;
+  this.regService.cancelRegistration(this.selectedEventToCancel.id).subscribe({
+    next: () => {
+      this.snackbar.open("Registration Cancelled", "OK", { duration: 3000 });
+      this.filterTrigger$.next();
+      this.closeCancelModal();
+    },
+    error: (err) => {
+      this.snackbar.open(err.error?.message || "Failed to cancel", "OK", { duration: 3000 });
+      this.closeCancelModal();
+    }
+  });
 }
 
 goToLogin() {
@@ -821,6 +862,7 @@ closeRegister() {
 this.showRegisterModal = false;
 this.registrationSuccessData = null;
 this.processingPayment = false;
+this.qrCodeDataUrl = null;
 }
 
 submitRegistration() {
@@ -830,9 +872,19 @@ submitRegistration() {
     next: (res) => {
       this.processingPayment = false;
       this.registrationSuccessData = {
-        qrPayload: res.qrPayload,
-        icsData: res.icsData
+        qrPayload: res.registration?.qrPayload || res.qrPayload,
+        icsData: res.registration?.icsData || res.icsData
       };
+      
+      const payload = res.registration?.qrPayload || res.qrPayload;
+      if (payload) {
+         QRCode.toDataURL(payload, { width: 256, margin: 2, color: { dark: '#000000', light: '#ffffff' } })
+          .then(url => {
+            this.qrCodeDataUrl = url;
+            this.cdr.detectChanges();
+          }).catch(err => console.error(err));
+      }
+      
       this.registerStep = 'success';
       this.snackbar.open("✅ Registered successfully!", "OK", { duration: 3000 });
       this.filterTrigger$.next();

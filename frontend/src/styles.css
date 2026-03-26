@@ -102,3 +102,22 @@ body {
   background-color: #fde68a;
   transform: translateX(4px);
 }
+
+/* Angular Material Snackbar Brutalist Override */
+.mat-mdc-snack-bar-container .mdc-snackbar__surface {
+  background-color: #000000 !important;
+  border: 4px solid #f472b6 !important;
+  box-shadow: 6px 6px 0px #f472b6 !important;
+  border-radius: 0 !important;
+}
+
+.mat-mdc-snack-bar-container .mdc-snackbar__label {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  font-size: 0.9rem !important;
+}
+
+.mat-mdc-snack-bar-container .mat-mdc-button .mdc-button__label {
+  color: #fde68a !important;
+  font-weight: 900 !important;
+}

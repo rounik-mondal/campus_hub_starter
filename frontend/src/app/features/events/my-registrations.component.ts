@@ -6,6 +6,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
+import * as QRCode from 'qrcode';
 
 @Component({
   selector: 'app-my-registrations',
@@ -52,9 +53,13 @@ import { environment } from '../../../environments/environment';
             </div>
 
             @if (reg.qrPayload) {
-              <div class="border-4 border-black bg-white p-3 mb-4 text-center">
-                <div class="w-full h-24 bg-gray-200 border-4 border-black flex items-center justify-center font-black text-xs break-all px-2 overflow-hidden">
-                  [QR] {{ reg.qrPayload.length > 20 ? (reg.qrPayload | slice:0:20) + '...' : reg.qrPayload }}
+              <div class="border-4 border-black bg-white p-3 mb-4 text-center flex flex-col items-center">
+                <div class="w-full h-auto bg-gray-200 border-4 border-black flex items-center justify-center overflow-hidden p-2">
+                  @if (qrCodeDataUrls[reg.id]) {
+                     <img [src]="qrCodeDataUrls[reg.id]" alt="QR Code" class="w-24 h-24 sm:w-32 sm:h-32 object-contain" />
+                  } @else {
+                     <span class="font-black text-xs">GENERATING QR...</span>
+                  }
                 </div>
                 <p class="text-[0.6rem] font-black mt-1 uppercase text-neutral-500">Scan at Entry</p>
               </div>
@@ -102,7 +107,7 @@ import { environment } from '../../../environments/environment';
 
             <div class="mt-4 pt-4 border-t-4 border-black text-center">
               @if (reg.status === 'pending' || reg.status === 'approved') {
-                <button (click)="cancel(reg.id)"
+                <button (click)="openCancelModal(reg.id)"
                   class="border-4 border-black bg-[#f87171] text-black px-4 py-2 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:-translate-y-1 transition-all w-full">
                   CANCEL REGISTRATION
                 </button>
@@ -150,6 +155,26 @@ import { environment } from '../../../environments/environment';
       </div>
     </div>
   }
+
+  <!-- CANCEL MODAL -->
+  @if (showCancelModal) {
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div class="bg-white border-4 border-black p-6 md:p-8 w-full max-w-md rounded-xl shadow-[10px_10px_0px_#000] flex flex-col gap-4 text-center">
+        <h2 class="text-3xl font-black mb-2">⚠️ Cancel Registration</h2>
+        <p class="text-sm font-bold text-neutral-600 mb-4">Are you sure you want to cancel your registration for this event? This action cannot be undone.</p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 mt-2">
+          <button (click)="confirmCancel()" class="flex-1 border-4 border-black bg-[#f87171] px-4 py-3 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all text-white">
+            YES, CANCEL IT
+          </button>
+          <button (click)="closeCancelModal()" class="flex-1 border-4 border-black bg-white px-4 py-3 font-black shadow-[4px_4px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+            GO BACK
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
 </div>
   `
 })
@@ -161,6 +186,8 @@ export class MyRegistrationsComponent implements OnInit {
 
   registrations = signal<Registration[]>([]);
   loading = signal(true);
+  
+  qrCodeDataUrls: Record<string, string> = {};
   
   showInviteModal = false;
   selectedRegForInvite: Registration | null = null;
@@ -202,21 +229,47 @@ export class MyRegistrationsComponent implements OnInit {
       next: (res) => {
         this.registrations.set(res.registrations);
         this.loading.set(false);
+        
+        res.registrations.forEach(reg => {
+          if (reg.qrPayload) {
+            QRCode.toDataURL(reg.qrPayload, { width: 256, margin: 2, color: { dark: '#000000', light: '#ffffff' } })
+              .then(url => {
+                this.qrCodeDataUrls[reg.id] = url;
+              })
+              .catch(err => console.error("QR Code Error:", err));
+          }
+        });
       },
       error: () => this.loading.set(false)
     });
   }
 
-  cancel(id: string) {
-    if (confirm("Are you sure you want to cancel this registration?")) {
-      this.regService.cancelRegistration(id).subscribe({
-        next: () => {
-          this.snackBar.open("Registration Cancelled", "OK", { duration: 3000 });
-          this.fetchData(); // Trigger reload to free seats immediately
-        },
-        error: (err) => alert(err.error?.message || "Failed to cancel")
-      });
-    }
+  showCancelModal = false;
+  selectedRegToCancel: string | null = null;
+
+  openCancelModal(id: string) {
+    this.selectedRegToCancel = id;
+    this.showCancelModal = true;
+  }
+  
+  closeCancelModal() {
+    this.showCancelModal = false;
+    this.selectedRegToCancel = null;
+  }
+  
+  confirmCancel() {
+    if (!this.selectedRegToCancel) return;
+    this.regService.cancelRegistration(this.selectedRegToCancel).subscribe({
+      next: () => {
+        this.snackBar.open("Registration Cancelled", "OK", { duration: 3000 });
+        this.fetchData(); 
+        this.closeCancelModal();
+      },
+      error: (err) => {
+        this.snackBar.open(err.error?.message || "Failed to cancel", "OK", { duration: 3000 });
+        this.closeCancelModal();
+      }
+    });
   }
 
   isTeamLead(reg: Registration): boolean {
