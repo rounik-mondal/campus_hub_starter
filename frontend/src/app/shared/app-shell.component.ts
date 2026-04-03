@@ -65,6 +65,12 @@ export class AppShellComponent {
     },
     {
       label: 'DASHBOARD',
+      icon: '📊',
+      path: '/admin/college-dashboard',
+      roles: ['college_admin']
+    },
+    {
+      label: 'DASHBOARD',
       icon: '🛠',
       path: '/admin/dashboard',
       roles: ['super_admin']

@@ -1,4 +1,5 @@
 import prisma from "../config/prisma.js";
+import { logAdminAction } from "./adminLog.service.js";
 import { generateQRCodePayload, generateICSCalendar } from "./qr-ics.service.js";
 
 
@@ -283,10 +284,14 @@ export const updateRegistrationStatusService = async (
     throw new Error("Not authorized");
   }
 
-  return prisma.registration.update({
+  const updated = await prisma.registration.update({
     where: { id: registrationId },
     data: { status }
   });
+
+  await logAdminAction(admin.id, `Updated registration ${registrationId} to status ${status}`);
+
+  return updated;
 
 };
 
@@ -336,9 +341,13 @@ export const deleteEventService = async (eventId, user) => {
 
   }
 
-  return prisma.event.delete({
+  const deleted = await prisma.event.delete({
     where: { id: eventId }
   });
+
+  await logAdminAction(user.id, `Deleted event: ${event.title}`);
+
+  return deleted;
 
 };
 
@@ -367,10 +376,14 @@ export const updateEventService = async (eventId, data, user) => {
 
   }
 
-  return prisma.event.update({
+  const updated = await prisma.event.update({
     where: { id: eventId },
     data
   });
+
+  await logAdminAction(user.id, `Updated event: ${event.title}`);
+
+  return updated;
 
 };
 

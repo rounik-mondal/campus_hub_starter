@@ -6,6 +6,8 @@ import {
   listColleges,
   createCollegeAdmin,
   listCollegeAdmins,
+  getDeepColleges,
+  revokeCollegeAdmin
 } from "../controllers/college.controller.js";
 
 import { verifyAuth, authorize } from "../middlewares/auth.middleware.js";
@@ -36,6 +38,20 @@ router.post(
   verifyAuth,
   authorize("super_admin"),
   createCollegeAdmin
+);
+
+router.get(
+  "/deep-details",
+  verifyAuth,
+  authorize("super_admin"),
+  getDeepColleges
+);
+
+router.delete(
+  "/:collegeId/admins/:adminId",
+  verifyAuth,
+  authorize("super_admin"),
+  revokeCollegeAdmin
 );
 
 export default router;

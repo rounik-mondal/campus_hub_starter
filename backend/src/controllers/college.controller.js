@@ -5,6 +5,8 @@ import {
   listCollegesService,
   createCollegeAdminService,
   listCollegeAdminService,
+  getDeepCollegesService,
+  revokeCollegeAdminService
 } from "../services/college.service.js";
 
 export const createCollege = async (req, res) => {
@@ -69,5 +71,24 @@ export const createCollegeAdmin = async (req, res) => {
     res.status(400).json({
       message: err.message,
     });
+  }
+};
+
+export const getDeepColleges = async (req, res) => {
+  try {
+    const colleges = await getDeepCollegesService(req.user);
+    res.status(200).json({ colleges });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+export const revokeCollegeAdmin = async (req, res) => {
+  try {
+    const { collegeId, adminId } = req.params;
+    await revokeCollegeAdminService(collegeId, adminId, req.user);
+    res.status(200).json({ message: "Admin privileges revoked successfully" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };

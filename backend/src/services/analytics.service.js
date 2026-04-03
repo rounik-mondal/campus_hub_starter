@@ -11,35 +11,25 @@ export const getPlatformAnalyticsService = async (user) => {
     totalAdmins,
     totalStudents,
     totalEvents,
-    totalRegistrations
+    totalRegistrations,
+    feedbacks
   ] = await Promise.all([
     prisma.college.count(),
     prisma.user.count({ where: { role: "college_admin" } }),
     prisma.user.count({ where: { role: "student" } }),
     prisma.event.count(),
-    prisma.registration.count()
+    prisma.registration.count(),
+    prisma.feedback.findMany({ select: { rating: true } })
   ]);
 
-  const rawEventsPerCollege = await prisma.event.groupBy({
-    by: ['collegeId'],
-    _count: {
-      id: true
-    }
-  });
-
-  const rawRegistrationsPerEvent = await prisma.registration.groupBy({
-    by: ['eventId'],
-    _count: {
-      id: true
-    }
-  });
-
-  const roles = await prisma.user.groupBy({
-    by: ['role'],
-    _count: { id: true }
+  // Total Revenue Calculation across all approved registrations mapped to paid events
+  const approvedPaidRegistrations = await prisma.registration.findMany({
+    where: { status: "approved", event: { isPaid: true } },
+    include: { event: { select: { ticketPrice: true } } }
   });
   
-  const roleDistribution = roles.map(r => ({ role: r.role, count: r._count.id }));
+  const totalRevenue = approvedPaidRegistrations.reduce((acc, reg) => acc + (reg.event.ticketPrice || 0), 0);
+  const averageRating = feedbacks.length > 0 ? (feedbacks.reduce((acc, f) => acc + f.rating, 0) / feedbacks.length).toFixed(1) : 0;
 
   return {
     totalColleges,
@@ -47,8 +37,82 @@ export const getPlatformAnalyticsService = async (user) => {
     totalStudents,
     totalEvents,
     totalRegistrations,
-    eventsPerCollege: rawEventsPerCollege.map(r => ({ collegeId: r.collegeId, count: r._count.id })),
-    roleDistribution,
-    registrationsPerEvent: rawRegistrationsPerEvent.map(r => ({ eventId: r.eventId, count: r._count.id }))
+    totalRevenue,
+    averageRating,
+    totalFeedbacks: feedbacks.length
+  };
+};
+
+export const getCollegeAnalyticsService = async (user) => {
+  if (user.role !== "college_admin" || !user.collegeId) {
+    throw new Error("Only college admin mapped to a college can access this");
+  }
+
+  const collegeId = user.collegeId;
+
+  // Total events hosted by the college
+  const totalEvents = await prisma.event.count({
+    where: { collegeId }
+  });
+
+  // Fetch all approved registrations for events hosted by this college
+  const approvedRegistrations = await prisma.registration.findMany({
+    where: {
+      status: "approved",
+      event: { collegeId }
+    },
+    include: {
+      event: {
+         select: { id: true, title: true, ticketPrice: true, isPaid: true }
+      }
+    }
+  });
+
+  const totalParticipants = approvedRegistrations.length;
+  let totalRevenue = 0;
+  
+  // To find top performing event, we count participants per event
+  const participantsPerEvent = {};
+  
+  approvedRegistrations.forEach(reg => {
+    if (reg.event.isPaid) {
+      totalRevenue += (reg.event.ticketPrice || 0);
+    }
+    
+    participantsPerEvent[reg.event.id] = participantsPerEvent[reg.event.id] || { count: 0, title: reg.event.title };
+    participantsPerEvent[reg.event.id].count += 1;
+  });
+
+  let topPerformingEvent = null;
+  let maxCount = -1;
+  for (const [id, data] of Object.entries(participantsPerEvent)) {
+    if (data.count > maxCount) {
+      maxCount = data.count;
+      topPerformingEvent = { title: data.title, participants: data.count };
+    }
+  }
+
+  // Proper rating and feedback analysis
+  const collegeFeedbacks = await prisma.feedback.findMany({
+    where: { event: { collegeId } },
+    select: { rating: true }
+  });
+
+  const averageRating = collegeFeedbacks.length > 0 ? (collegeFeedbacks.reduce((acc, f) => acc + f.rating, 0) / collegeFeedbacks.length).toFixed(1) : 0;
+
+  // Breakdown of ratings
+  const ratingDistribution = { 5:0, 4:0, 3:0, 2:0, 1:0 };
+  collegeFeedbacks.forEach(f => {
+    ratingDistribution[f.rating] = (ratingDistribution[f.rating] || 0) + 1;
+  });
+
+  return {
+    totalEvents,
+    totalParticipants,
+    totalRevenue,
+    topPerformingEvent,
+    averageRating,
+    totalFeedbacks: collegeFeedbacks.length,
+    ratingDistribution
   };
 };

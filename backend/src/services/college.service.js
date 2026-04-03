@@ -124,3 +124,63 @@ export const createCollegeAdminService = async (data, user) => {
   return admin;
 };
 
+// Get deeper college details (super_admin)
+export const getDeepCollegesService = async (user) => {
+  if (user.role !== "super_admin") {
+    throw new Error("Only super admin can fetch deep college details");
+  }
+
+  return prisma.college.findMany({
+    include: {
+      users: {
+        where: { role: "college_admin" },
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      },
+      _count: {
+        select: { events: true }
+      }
+    },
+    orderBy: { createdAt: "desc" }
+  });
+};
+
+// Revoke college admin
+export const revokeCollegeAdminService = async (collegeId, userIdToRevoke, requester) => {
+  if (requester.role !== "super_admin") {
+    throw new Error("Only super admin can revoke admins");
+  }
+
+  const targetAdmin = await prisma.user.findFirst({
+    where: { 
+      id: userIdToRevoke, 
+      collegeId: collegeId,
+      role: "college_admin" 
+    }
+  });
+
+  if (!targetAdmin) {
+    throw new Error("Specified user is not an admin of this college");
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: userIdToRevoke },
+    data: { 
+      role: "student",
+      collegeId: null
+    }
+  });
+
+  await prisma.adminLog.create({
+    data: {
+      action: `Revoked college_admin role for user: ${targetAdmin.email} from college ${collegeId}`,
+      userId: requester.id
+    }
+  });
+
+  return updated;
+};
+

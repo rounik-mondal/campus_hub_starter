@@ -1,6 +1,7 @@
 // src/services/event.service.js
 
 import prisma from "../config/prisma.js";
+import { logAdminAction } from "./adminLog.service.js";
 
 // CREATE EVENT
 export const createEventService = async (data, user) => {
@@ -40,6 +41,8 @@ export const createEventService = async (data, user) => {
       createdBy: user.id,
     },
   });
+
+  await logAdminAction(user.id, `Created new event: ${event.title}`);
 
   return event;
 };

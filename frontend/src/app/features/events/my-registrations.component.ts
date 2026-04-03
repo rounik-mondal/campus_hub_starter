@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { RegistrationService, Registration } from '../../core/services/registration.service';
 import { TokenService } from '../../core/services/token.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -11,7 +12,7 @@ import * as QRCode from 'qrcode';
 @Component({
   selector: 'app-my-registrations',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
 <div class="min-h-screen px-6 py-12 relative overflow-hidden">
   <div class="max-w-6xl mx-auto space-y-10 relative z-10">
@@ -35,7 +36,7 @@ import * as QRCode from 'qrcode';
       <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         @for (reg of registrations(); track reg.id) {
           <div class="group rounded-3xl border-4 border-black bg-white p-6 shadow-[10px_10px_0px_#000] transition-all hover:-translate-y-1">
-            <h3 class="text-xl font-black mb-1">{{ reg.event?.title || 'Unknown Event' }}</h3>
+            <a [routerLink]="['/events', reg.event?.id]" class="text-xl font-black mb-1 hover:text-[#f472b6] transition-colors cursor-pointer block hover:underline">{{ reg.event?.title || 'Unknown Event' }}</a>
             <p class="text-sm font-bold text-neutral-600 mb-2">{{ reg.event?.college?.name }}</p>
             <p class="text-xs font-bold bg-neutral-100 p-2 border-2 border-black inline-block mb-4 shadow-[2px_2px_0px_#000]">
               📅 {{ reg.event?.startDate | date:'medium' }}

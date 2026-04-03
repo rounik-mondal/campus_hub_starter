@@ -12,6 +12,15 @@ export const routes: Routes = [
       ),
   },
   
+  // Event Details
+  {
+    path: 'events/:id',
+    loadComponent: () =>
+      import('./features/events/event-details.component').then(
+        (m) => m.EventDetailsComponent
+      ),
+  },
+  
   // Student Registrations
   {
     path: 'my-registrations',
@@ -53,6 +62,28 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/admin/college-admin-registrations.component').then(
         (m) => m.CollegeAdminRegistrationsComponent
+      ),
+  },
+
+  // Specific Event Management View
+  {
+    path: 'admin/manage-events/:id',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['college_admin', 'super_admin'] },
+    loadComponent: () =>
+      import('./features/admin/college-admin-event-manage.component').then(
+        (m) => m.CollegeAdminEventManageComponent
+      ),
+  },
+
+  // College Admin Dashboard
+  {
+    path: 'admin/college-dashboard',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['college_admin'] },
+    loadComponent: () =>
+      import('./features/admin/college-admin-dashboard.component').then(
+        (m) => m.CollegeAdminDashboardComponent
       ),
   },
 

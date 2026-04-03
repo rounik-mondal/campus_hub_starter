@@ -51,6 +51,7 @@ model User {
   college       College?       @relation(fields: [collegeId], references: [id])
   registrations Registration[]
   feedbacks     Feedback[]
+  comments      Comment[]
   adminLogs     AdminLog[]
   Event         Event[]
 
@@ -85,6 +86,7 @@ model Event {
   college       College        @relation(fields: [collegeId], references: [id])
   registrations Registration[]
   feedbacks     Feedback[]
+  comments      Comment[]
   creator       User           @relation(fields: [createdBy], references: [id])
   teams         Team[]
   invitations   Invitation[]
@@ -191,4 +193,23 @@ model Invitation {
   @@index([inviteeEmail])
   @@index([teamId])
   @@index([eventId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  content   String
+  parentId  String?
+  timestamp DateTime @default(now())
+
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  parent  Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([eventId])
+  @@index([userId])
+  @@index([parentId])
 }

@@ -14,6 +14,9 @@ import paymentRoutes from "./routes/payment.routes.js";
 import teamRoutes from "./routes/team.routes.js";
 import invitationRoutes from "./routes/invitation.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
+import feedbackRoutes from "./routes/feedback.routes.js";
+import adminLogRoutes from "./routes/adminLog.routes.js";
+import commentRoutes from "./routes/comment.routes.js";
 
 const app = express();
 
@@ -35,6 +38,9 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/invitations", invitationRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/feedbacks", feedbackRoutes);
+app.use("/api/admin-logs", adminLogRoutes);
+app.use("/api/comments", commentRoutes);
 
 const PORT = process.env.PORT || 5001;
 

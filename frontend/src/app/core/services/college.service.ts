@@ -50,4 +50,12 @@ export class CollegeService {
   createCollegeAdmin(data: any) {
     return this.http.post(`${this.baseUrl}/create-admin`, data);
   }
+
+  getDeepColleges() {
+    return this.http.get<any>(`${this.baseUrl}/deep-details`);
+  }
+
+  revokeCollegeAdmin(collegeId: string, adminId: string) {
+    return this.http.delete<any>(`${this.baseUrl}/${collegeId}/admins/${adminId}`);
+  }
 }

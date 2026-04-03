@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -17,8 +17,9 @@ import { RegistrationService } from '../../core/services/registration.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { TokenService } from '../../core/services/token.service';
 import { EventItem } from '../../models/event.model';
+
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import * as QRCode from 'qrcode';
@@ -308,7 +309,7 @@ text-xs font-black shadow-[4px_4px_0px_#000]"
 
 </div>
 
-<h3 class="text-xl font-black mb-2 group-hover:underline">
+<h3 class="text-xl font-black mb-2 hover:text-[#f472b6] cursor-pointer transition-colors" (click)="goToEventDetails(event.id)">
 {{ event.title }}
 </h3>
 
@@ -600,9 +601,7 @@ shadow-[10px_10px_0px_#000] space-y-4">
 
 `,
 })
-export class EventListComponent {
-
-/* your entire logic remains exactly the same */
+export class EventListComponent implements OnInit {
 
 private eventService = inject(EventService);
 private regService = inject(RegistrationService);
@@ -610,6 +609,7 @@ private paymentService = inject(PaymentService);
 private tokenService = inject(TokenService);
 private snackbar = inject(MatSnackBar);
 private router = inject(Router);
+private route = inject(ActivatedRoute);
 private http = inject(HttpClient);
 private cdr = inject(ChangeDetectorRef);
 
@@ -662,6 +662,20 @@ this.searchQuery = query;
 this.filterTrigger$.next();
 this.page$.next(1);
 });
+}
+
+ngOnInit() {
+  this.route.queryParams.subscribe(params => {
+    if (params['registerContextId']) {
+      this.eventService.getEventById(params['registerContextId']).subscribe({
+        next: (ev) => this.openRegister(ev)
+      });
+    }
+  });
+}
+
+goToEventDetails(id: string) {
+  this.router.navigate(['/events', id]);
 }
 
 onSearchChange(query: string) {
@@ -902,6 +916,7 @@ submitPaymentAndRegister() {
   this.processingPayment = true;
   this.paymentService.simulatePayment(this.selectedEvent.id, this.selectedEvent.ticketPrice).subscribe({
     next: (res) => {
+      //we can have other payement logics here if we want to connect any payment gateway we can do here
       this.snackbar.open("✅ Payment successful! Registering...", "OK", { duration: 2000 });
       // On payment success, proceed to register
       this.submitRegistration();

@@ -16,6 +16,13 @@ export interface Registration {
   isInvitePlaceholder?: boolean;
 }
 
+export interface getMyRegistrationsModel
+{ 
+  count: number,
+  registrations: Registration[] 
+
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -26,9 +33,9 @@ export class RegistrationService {
   registerForEvent(eventId: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/event/${eventId}`, {});
   }
-
+  // return this.http.get<Registration> (this.apiurl)
   getMyRegistrations(): Observable<{ count: number, registrations: Registration[] }> {
-    return this.http.get<{ count: number, registrations: Registration[] }>(`${this.apiUrl}/me`);
+    return this.http.get<getMyRegistrationsModel>(`${this.apiUrl}/me`);
   }
 
   cancelRegistration(registrationId: string): Observable<any> {
