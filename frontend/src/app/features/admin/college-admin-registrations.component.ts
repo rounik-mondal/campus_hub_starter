@@ -44,7 +44,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
           <div class="h-64 bg-gray-200 animate-pulse border-4 border-black shadow-[8px_8px_0px_#000] rounded-xl"></div>
         }
       </div>
-    } @else if (filteredEvents().length === 0) {
+    } @else if (filteredEvents.length === 0) {
       <div class="bg-white border-4 border-black p-12 text-center shadow-[8px_8px_0px_#000]">
         <span class="text-6xl block mb-4">🏜️</span>
         <h2 class="text-2xl font-black">NO EVENTS FOUND</h2>
@@ -52,7 +52,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
       </div>
     } @else {
       <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:items-stretch">
-        @for (ev of filteredEvents(); track ev.id) {
+        @for (ev of filteredEvents; track ev.id) {
           <div 
             (click)="manageEvent(ev.id)"
             class="group cursor-pointer bg-white border-4 border-black p-6 shadow-[8px_8px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all flex flex-col justify-between">

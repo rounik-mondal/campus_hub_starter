@@ -76,7 +76,7 @@ import { AdminLogService } from '../../core/services/admin-log.service';
         </div>
 
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            @for (c of filteredColleges(); track c.id) {
+            @for (c of filteredColleges; track c.id) {
             <div class="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_#000] flex flex-col justify-between hover:-translate-y-1 transition-transform">
                 <div>
                     <div class="flex justify-between items-end mb-4 border-b-4 border-black pb-2">

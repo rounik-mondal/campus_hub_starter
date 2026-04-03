@@ -34,7 +34,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
       </div>
       <div class="flex gap-4">
           <div class="bg-[#bbf7d0] border-4 border-black px-6 py-4 shadow-[4px_4px_0px_#000] text-center">
-              <p class="text-3xl font-black">\${{ calculatedRevenue() }}</p>
+              <p class="text-3xl font-black">\${{ calculatedRevenue }}</p>
               <p class="text-xs font-bold uppercase">Event Revenue</p>
           </div>
       </div>
@@ -58,7 +58,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                 </div>
 
                 <div class="grid gap-4 sm:grid-cols-2">
-                    @for (p of filteredParticipants(); track p.id) {
+                    @for (p of filteredParticipants; track p.id) {
                     <div class="bg-[#f8fafc] border-2 border-black p-4 flex flex-col justify-between">
                         <div>
                             <p class="font-black text-lg truncate">{{ p.user?.name }}</p>
